@@ -39,7 +39,6 @@ svg = load("/Users/aliciahorsch/Anaconda/DL Challenge/train/svg/", zipped = Fals
 
 #Process svg-files
 tk = SpaceTokenizer()
-test = tk.tokenize(svg[677])
 
 #Tokenization of sequences
 def tokenize(liste):
