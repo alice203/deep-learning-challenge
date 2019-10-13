@@ -1,87 +1,107 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# Load pictures, make them into arrays
-
-# In[9]:
-
-
+from __future__ import division
+import numpy as np
+from nltk.tokenize import SpaceTokenizer
+import sys
+import zipfile
+import logging
 import imageio
 import glob
-
-im0 = imageio.imread("/Users/aliciahorsch/Anaconda/DL challenge/0.png")
-print(im0.shape)
-print(im0[:5,:10,])
-
-
-# In[11]:
-
-
-png = []
-
-for im_path in glob.glob("/Users/aliciahorsch/Anaconda/DL challenge/train/png/*.png"):
-    im = imageio.imread(im_path)
-    png.append(im)
-
-
-# In[12]:
-
-
-print(png[0].shape)
-
-
-# In[24]:
-
-
-#print(png[0])
-
-
-# In[37]:
-
-
 import matplotlib.pyplot as plt
 get_ipython().run_line_magic('matplotlib', 'inline')
 
-plt.imshow(png[0])
-plt.imshow(png[0][:,:,1])
-#4th channel is transparency, 1-3 is RGB
+#Load images
+png = []
+for im_path in glob.glob("/Users/aliciahorsch/Anaconda/DL challenge/train/png/*.png"):
+    im = imageio.imread(im_path)
+    png.append(im)
+png=np.array(png)
+np.save("png.npy", png)
+#X = np.load("png.npy")
 
+#Load svg-files
+def load(path, zipped=True):
+    js = range(48000)
+    strings = []
+    if zipped:
+        with zipfile.ZipFile(path) as z:
+            for j in js:
+                strings.append(z.open("{}.svg".format(j)).read())
+    else:
+        for j in js:
+                strings.append(open("{}/{}.svg".format(path, j)).read())
+                
+    return strings
 
-# Load svg, make them into arrays
+svg = load("/Users/aliciahorsch/Anaconda/DL Challenge/train/svg/", zipped = False)
 
-# In[34]:
+#Process svg-files
+tk = SpaceTokenizer()
+test = tk.tokenize(svg[677])
 
+#Tokenization of sequences
+def tokenize(liste):
+    tokens = []
+    for sequence in svg:
+        l = tk.tokenize(sequence)
+        tokens.append(l)
+    return tokens
 
-import xml.etree.ElementTree as ET
+tokens = tokenize(svg)
 
-al = []
-svg = []
-
-for svg_path in glob.glob("/Users/aliciahorsch/Anaconda/DL challenge/train/svg/*.svg"):
-    tree = ET.parse('0.svg')
-    root = tree.getroot()
-    for child in root:
-        if "defs" in child.tag:
-            continue
+#Determine maximum length of tokenized sequence
+def max_length(tokenized_seq_list):
+    maxi = 0
+    for file in tokens:
+        length = len(file)
+        if length > maxi:
+            maxi = length
         else:
-            a = child.tag
-            b = a[28:]
-            svg.append([b, child.attrib])
-    al.append(svg)
-    svg = []
+            continue
+    return maxi
 
+#Dictionary of all tokens
+def dictionary_tokens(tokenized_seq_list):
+    dic = {}
+    counter = 1
+    for tokenlist in tokens:
+        for token in tokenlist:
+            if token in dic:
+                continue
+            else:
+                dic[token] = counter
+                counter +=1
+    return dic
+            
+token_dic = dictionary_tokens(tokens)
 
-# In[6]:
+#Make array out of list
+def create_array(tokenized_seq_list, dic):
+    z = []
+    aux =[]
+    for tokenlist in tokens:
+        for token in tokenlist:
+            aux.append(dic[token])
+        while len(aux) < 66:
+            aux.append(0)
+        n = np.array(aux)
+        z.append(aux)
+        aux = []
+    return z
 
+tokenized_seq = create_array(tokens, token_dic)
 
-#need tag (ellipse)
-#and attributes of shapes
-
-
-# In[35]:
-
-
-print(al[0])
-print()
-print(al[0][0][0])
+#One-hot-encode tokenized sequences
+def one_hot_encode(tokenized_sequence, max_length):
+    a = []
+    #print(l.shape)
+    for item in z:
+        #print(item)
+        l = np.zeros((max_length,57))
+        for index,value in enumerate(item):
+            l[index,value] = 1
+        a.append(l)
+    return np.array(a)
+svg_f = one_hot_encode(z,max_length)
+np.save("svg.npy", svg_f)
+#y = np.load("svg.npy")
 
