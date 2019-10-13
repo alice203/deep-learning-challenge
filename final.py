@@ -96,14 +96,14 @@ tokenized_seq = create_array(tokens, token_dic)
 def one_hot_encode(tokenized_sequence, max_length):
     a = []
     #print(l.shape)
-    for item in z:
+    for item in tokenized_sequence:
         #print(item)
         l = np.zeros((max_length,57))
         for index,value in enumerate(item):
             l[index,value] = 1
         a.append(l)
     return np.array(a)
-svg_f = one_hot_encode(z,max_length)
+svg_f = one_hot_encode(tokenized_seq,max_length)
 np.save("svg.npy", svg_f)
 #y = np.load("svg.npy")
 
